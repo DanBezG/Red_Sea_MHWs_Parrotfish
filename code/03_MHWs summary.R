@@ -14,63 +14,6 @@ Filter_Fish <- function(fish_ids,raw_fish_df) {
   return(filter_fish)
 }
 
-add_solar_events <- function(df, lat = 29.538417, lon = 34.954417,
-                             tz_local = "Asia/Jerusalem") {
-  # Get solar events per date
-  solar_events <- getSunlightTimes(
-    date = unique(df$date),
-    lat = lat,
-    lon = lon,
-    keep = c("nadir", "sunrise", "solarNoon", "sunset"),
-    tz = tz_local
-  )
-  solar_events$sunrise <- as.POSIXct(force_tz(solar_events$sunrise,"UTC"))
-  solar_events$nadir <- as.POSIXct(force_tz(solar_events$nadir,"UTC"))
-  solar_events$sunset <- as.POSIXct(force_tz(solar_events$sunset,"UTC"))
-  solar_events$solarNoon <- as.POSIXct(force_tz(solar_events$solarNoon,"UTC"))
-  
-  # Join solar_events back to df
-  df <- df %>% left_join(solar_events, by = "date")
-  
-  df <- df %>%
-    rowwise() %>%
-    mutate(
-      # civil midnights bracketing the timestamp
-      midnight0 = floor_date(real_datetime, unit = "day"),
-      midnight1 = midnight0 + days(1)
-    ) %>%
-    rowwise() %>%
-    mutate(
-      TimeOrdinal = case_when(
-        # 1) Midnight -> Sunrise  (1 to <2)
-        real_datetime >= midnight0 & real_datetime < sunrise ~
-          1 + as.numeric(difftime(real_datetime, midnight0, units = "secs")) /
-          as.numeric(difftime(sunrise, midnight0, units = "secs")),
-        
-        # 2) Sunrise -> Solar noon  (2 to <3)
-        real_datetime >= sunrise & real_datetime < solarNoon ~
-          2 + as.numeric(difftime(real_datetime, sunrise, units = "secs")) /
-          as.numeric(difftime(solarNoon, sunrise, units = "secs")),
-        
-        # 3) Solar noon -> Sunset  (3 to <4)
-        real_datetime >= solarNoon & real_datetime < sunset ~
-          3 + as.numeric(difftime(real_datetime, solarNoon, units = "secs")) /
-          as.numeric(difftime(sunset, solarNoon, units = "secs")),
-        
-        # 4) Sunset -> next Midnight  (4 to <5)
-        real_datetime >= sunset & real_datetime < midnight1 ~
-          4 + as.numeric(difftime(real_datetime, sunset, units = "secs")) /
-          as.numeric(difftime(midnight1, sunset, units = "secs")),
-        
-        TRUE ~ NA_real_
-      )
-    ) %>%
-    ungroup() %>%
-    select(-midnight0, -midnight1)
-  
-  return(df)
-}
-
 # Function to merge two data frames conditionally based on whether they are empty or not
 conditional_merge <- function(df1, df2, by_cols) {
   if (nrow(df1) == 0) {

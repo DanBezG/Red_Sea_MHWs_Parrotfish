@@ -188,7 +188,7 @@ model_summaries <- lapply(models, function(m) {
 model_summaries <- bind_rows(model_summaries, .id = "model_num")
 
 #### Save the lm summaries 
-### Choose the name of the database and def !
+### Choose the name of the def !
 # fix = OISST_Fix_MHW_lm_summary.RDS
 # detrended =  OISST_detrended_lm_summary.RDS
 # saveRDS(MHWs_comparison,"results/Individual Heatwaves/OISST_Fix_MHW_lm_summary.RDS")
