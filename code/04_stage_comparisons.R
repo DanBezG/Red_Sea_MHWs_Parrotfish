@@ -2,18 +2,23 @@
 
 install.packages("pacman")
 library(pacman)
-p_load(tidyverse, lubridate, openxlsx)
+p_load(tidyverse, lubridate, openxlsx,broom,gratia)
 
 ###################### Code ######################
 
 ## Load data
 
+# MHWs summary
 sum_heat_wave_day <- readrds("results/Individual Heatwaves/OISST_Fix_MHW_Stage_summary.RDS")
+# tags metadata
+tags_metadata <- read.xlsx("data/parrotfish data/parrotfish_metadata.xlsx")
 
 # Nest the data by Serial 
 nest_hw_day <- sum_heat_wave_day %>% 
   ungroup() %>%
   nest_by(Serial)
+
+## Calculate stages comparison
 
 # Initialize an empty dataframe to store the results
 MHWs_comparison <- data.frame(
@@ -105,12 +110,88 @@ MHW_disp_comparison <- sum_heat_wave_day %>%
     log_max_displacement = log
   )
 
-
+# Merge with heatwave metadata
 MHWs_comparison <- merge(MHWs_comparison,MHW_disp_comparison,by=c("Serial","fish_id","Stage_period"),all.x = T)
 rm(MHW_disp_comparison)
 
+MHWs_comparison <- merge(MHWs_comparison,MHWs_Eilat,by = "Serial") %>%
+  select(-Fish_IDs)
 
-## Choose the name of the database and def 
+# Add species information from the metadata
+tags_metadata <- tags_metadata %>% 
+  select(fish_id,species) 
+MHWs_comparison <- distinct(merge(MHWs_comparison,tags_metadata,by = "fish_id"))
+
+#### Save the comparison data 
+### Choose the name of the database and def !
 # fix = OISST_Fix_MHW_Stage_comparison.RDS
 # detrended =  OISST_detrended_MHW_Stage_comparison.RDS
-saveRDS(MHWs_comparison,"results/Individual Heatwaves/OISST_Fix_MHW_Stage_comparison.RDS")
+# saveRDS(MHWs_comparison,"results/Individual Heatwaves/OISST_Fix_MHW_Stage_comparison.RDS")
+
+
+## Check relationship with MHWs characteristics - linear models!
+MHWs_comparison_lm <- MHWs_comparison %>% filter(Stage_period=="MHW : Before")
+
+# Activity
+lm_act_cum <- lm(ln_activity_ratio ~ intensity_cumulative,data = MHWs_comparison_lm) 
+lm_act_max <- lm(ln_activity_ratio ~ intensity_max,data = MHWs_comparison_lm) 
+lm_act_max_abs <- lm(ln_activity_ratio ~ intensity_max_abs,data = MHWs_comparison_lm) 
+lm_act_onset <- lm(ln_activity_ratio ~ rate_onset,data = MHWs_comparison_lm) 
+lm_act_mean <- lm(ln_activity_ratio ~ intensity_mean,data = MHWs_comparison_lm) 
+lm_act_duration <- lm(ln_activity_ratio ~ duration,data = MHWs_comparison_lm)
+
+# Depth
+lm_dep_cum<- lm(delta_depth ~ intensity_cumulative,data = MHWs_comparison_lm)
+lm_dep_max <- lm(delta_depth ~ intensity_max,data = MHWs_comparison_lm)
+lm_dep_max_abs <- lm(delta_depth ~ intensity_max_abs,data = MHWs_comparison_lm)
+lm_dep_onset <- lm(delta_depth ~ rate_onset,data = MHWs_comparison_lm)
+lm_dep_mean <- lm(delta_depth ~ intensity_mean,data = MHWs_comparison_lm)
+lm_dep_duration <- lm(delta_depth ~ duration,data = MHWs_comparison_lm)
+
+# Displacement
+lm_disp_cum<- lm(log_max_displacement ~ intensity_cumulative,data = MHWs_comparison_lm)
+lm_disp_max <- lm(log_max_displacement ~ intensity_max,data = MHWs_comparison_lm)
+lm_disp_max_abs <- lm(log_max_displacement ~ intensity_max_abs,data = MHWs_comparison_lm)
+lm_disp_onset <- lm(log_max_displacement ~ rate_onset,data = MHWs_comparison_lm)
+lm_disp_mean <- lm(log_max_displacement ~ intensity_mean,data = MHWs_comparison_lm)
+lm_disp_duration <- lm(log_max_displacement ~ duration,data = MHWs_comparison_lm)
+
+# Function to check models 
+appraise(lm_act_cum)
+
+# put all models in a named list
+models <- list(lm_act_cum,lm_act_max,lm_act_max_abs,lm_act_onset,lm_act_mean,lm_act_duration,
+  lm_dep_cum,lm_dep_max,lm_dep_max_abs,lm_dep_onset,lm_dep_mean,lm_dep_duration,lm_disp_cum,
+  lm_disp_max,lm_disp_max_abs,lm_disp_onset,lm_disp_mean,lm_disp_duration)
+
+# extract model summaries
+model_summaries <- lapply(models, function(m) {
+  coefs <- tidy(m) %>% filter(term != "(Intercept)")   # predictor only
+  fit   <- glance(m)
+  
+  data.frame(
+    response   = all.vars(formula(m))[1],
+    predictor  = coefs$term,
+    estimate   = coefs$estimate,
+    std_error  = coefs$std.error,
+    t_value    = coefs$statistic,
+    p_value    = coefs$p.value,
+    r_squared  = fit$r.squared,
+    adj_r2     = fit$adj.r.squared,
+    AIC        = fit$AIC,
+    BIC        = fit$BIC,
+    stringsAsFactors = FALSE
+  )
+})
+
+# combine into one dataframe
+model_summaries <- bind_rows(model_summaries, .id = "model_num")
+
+#### Save the lm summaries 
+### Choose the name of the database and def !
+# fix = OISST_Fix_MHW_lm_summary.RDS
+# detrended =  OISST_detrended_lm_summary.RDS
+# saveRDS(MHWs_comparison,"results/Individual Heatwaves/OISST_Fix_MHW_lm_summary.RDS")
+
+
+

@@ -341,8 +341,8 @@ stat_tags_metadata_parrot <- tags_metadata_parrot %>%
 sum_heat_wave_day <- distinct(merge(sum_heat_wave_day,stat_tags_metadata_parrot,by = "fish_id"))
 sum_heat_wave_day$Serial_fish_id <- paste(sum_heat_wave_day$Serial,sum_heat_wave_day$fish_id,sep = "_")
 
-############ Save the summary data 
-## Choose the name of the database and def 
+#### Save the summary data 
+### Choose the name of the database and def 
 # fix = OISST_Fix_MHW_Stage_summary.RDS
 # detrended =  OISST_detrended_MHW_Stage_summary.RDS
 # saveRDS(sum_heat_wave_day,paste("results/Individual Heatwaves/OISST_Fix_MHW_Stage_summary.RDS"))
