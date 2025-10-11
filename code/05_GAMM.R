@@ -140,8 +140,6 @@ MHWs_Eilat_Fix_OISST$date_peak <- as.Date(MHWs_Eilat_Fix_OISST$date_peak,origin 
 MHWs_Eilat_Fix_OISST$date_end <- as.Date(MHWs_Eilat_Fix_OISST$date_end,origin = "1899-12-30")
 MHWs_Eilat_Fix_OISST$start_1.5 <- as.Date(MHWs_Eilat_Fix_OISST$start_1.5,origin = "1899-12-30")
 MHWs_Eilat_Fix_OISST$end_1.5 <- as.Date(MHWs_Eilat_Fix_OISST$end_1.5,origin = "1899-12-30")
-MHWs_Eilat_Fix_OISST$start_3 <- as.Date(MHWs_Eilat_Fix_OISST$start_3,origin = "1899-12-30")
-MHWs_Eilat_Fix_OISST$end_3 <- as.Date(MHWs_Eilat_Fix_OISST$end_3,origin = "1899-12-30")
 MHWs_Eilat_Fix_OISST$Serial <- c(1:dim(MHWs_Eilat_Fix_OISST)[1])
 MHWs_Eilat_Fix_OISST <- MHWs_Eilat_Fix_OISST %>% relocate(Serial,.before = date_start)
 
@@ -150,8 +148,6 @@ MHWs_Eilat_detrended_OISST$date_start <- as.Date(MHWs_Eilat_detrended_OISST$date
 MHWs_Eilat_detrended_OISST$date_end <- as.Date(MHWs_Eilat_detrended_OISST$date_end,origin = "1899-12-30")
 MHWs_Eilat_detrended_OISST$start_1.5 <- as.Date(MHWs_Eilat_detrended_OISST$start_1.5,origin = "1899-12-30")
 MHWs_Eilat_detrended_OISST$end_1.5 <- as.Date(MHWs_Eilat_detrended_OISST$end_1.5,origin = "1899-12-30")
-MHWs_Eilat_detrended_OISST$start_3 <- as.Date(MHWs_Eilat_detrended_OISST$start_3,origin = "1899-12-30")
-MHWs_Eilat_detrended_OISST$end_3 <- as.Date(MHWs_Eilat_detrended_OISST$end_3,origin = "1899-12-30")
 MHWs_Eilat_detrended_OISST$Serial <- c(1:dim(MHWs_Eilat_detrended_OISST)[1])
 MHWs_Eilat_detrended_OISST <- MHWs_Eilat_detrended_OISST %>% relocate(Serial,.before = date_start)
 # Removes date peak
@@ -247,7 +243,7 @@ ggplot(MHWs_fish_data_dep_filtered,aes(x=real_datetime,y=depth))+
   ) 
 
 # Look for missing data at specific time of day 
-ggplot(MHWs_fish_data_dep_filtered,aes(x=DecimalTimeOfDay,y=depth))+
+ggplot(MHWs_fish_data_dep_filtered,aes(x=OrdinalTime,y=depth))+
   geom_point() +
   theme_minimal() +
   facet_wrap(~ Serial_fish_id,scales="free_y")+
@@ -259,12 +255,12 @@ ggplot(MHWs_fish_data_dep_filtered,aes(x=DecimalTimeOfDay,y=depth))+
   scale_y_reverse()
 
 ## Filter based on previous plot
-MHWs_fish_data_dep_filtered <- MHWs_fish_data_dep_filtered %>% filter(Serial_fish_id!="1_1168793" & Serial_fish_id!="2_1255785" & Serial_fish_id!="2_1255803" & Serial_fish_id!="3_1255800" & Serial_fish_id!="4_1255800" & Serial_fish_id!="4_1255815"& Serial_fish_id!="5_1255800"& Serial_fish_id!="5_1255815"& Serial_fish_id!="3_1255815")
+MHWs_fish_data_dep_filtered <- MHWs_fish_data_dep_filtered %>% filter(Serial_fish_id!="1_1168793" & Serial_fish_id!="2_1255785" & Serial_fish_id!="2_1255803" & Serial_fish_id!="3_1255800" & Serial_fish_id!="4_1255800" & Serial_fish_id!="4_1255815"& Serial_fish_id!="5_1255800"& Serial_fish_id!="5_1255815"& Serial_fish_id!="3_1255815" & Serial_fish_id!="2_1255800")
 
 ## OISST Fix fish filter
 # Serial_fish_id!="1_1168793" & Serial_fish_id!="2_1255785" & Serial_fish_id!="2_1255803" 
 # & Serial_fish_id!="3_1255800" & Serial_fish_id!="4_1255800" & Serial_fish_id!="4_1255815"
-# & Serial_fish_id!="5_1255800"& Serial_fish_id!="5_1255815"& Serial_fish_id!="3_1255815"
+# & Serial_fish_id!="5_1255800"& Serial_fish_id!="5_1255815" & Serial_fish_id!="3_1255815" & Serial_fish_id!="2_1255800"
 
 ## OISST detrended fish filter
 # Serial_fish_id!="1_1168793" & Serial_fish_id!="3_1255806" & Serial_fish_id!="4_1255792" & Serial_fish_id!="4_1255806"
@@ -274,32 +270,32 @@ MHWs_fish_data_dep_filtered <- MHWs_fish_data_dep_filtered %>% filter(Serial_fis
 # Time of day = DecimalTimeOfDay
 # Ordinal scale = TimeOrdinal
 
-global_dep_mod <-  bam(log_depth~s(DecimalTimeOfDay,bs="cc",k=15),
+global_dep_mod <-  bam(log_depth~s(TimeOrdinal,bs="cc",k=15),
                        MHWs_fish_data_dep_filtered,
                        method = "REML", family = gaussian(),
                        correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 
-base_dep_mod <- bam(log_depth~s(DecimalTimeOfDay,bs="cc",k=15) +
-                      s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) ,
+base_dep_mod <- bam(log_depth~s(TimeOrdinal,bs="cc",k=15) +
+                      s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) ,
                     MHWs_fish_data_dep_filtered,,
                     method = "REML", family = gaussian(),
                     correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 dep_sum_base_mod <- summary(base_dep_mod)
 
 intercept_dep_mod <- bam(log_depth~Before_After+
-                           s(DecimalTimeOfDay,bs="cc",k=15) +
-                           s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")),
+                           s(TimeOrdinal,bs="cc",k=15) +
+                           s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")),
                          MHWs_fish_data_dep_filtered,
                          method = "REML", family = gaussian(),
                          correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 
-smooth_dep_mod <- bam(log_depth~s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
-                        s(DecimalTimeOfDay,by=Before_After,bs="cc",k=15),
+smooth_dep_mod <- bam(log_depth~s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
+                        s(TimeOrdinal,by=Before_After,bs="cc",k=15),
                       MHWs_fish_data_dep_filtered, method = "REML", family = gaussian(),
                       correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 
-full_dep_mod <- bam(log_depth~s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
-                      s(DecimalTimeOfDay,by=Before_After,bs="cc",k=15) +
+full_dep_mod <- bam(log_depth~s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
+                      s(TimeOrdinal,by=Before_After,bs="cc",k=15) +
                       Before_After ,
                     MHWs_fish_data_dep_filtered,
                     method = "REML", family = gaussian(),
@@ -316,7 +312,7 @@ print(paste("Deviance explained of base model:",dep_sum_base_mod$dev.expl,"Devia
 gam.check(base_dep_mod)
 gam.check(full_dep_mod)
 appraise_dep <- appraise(full_dep_mod)
-
+appraise_dep
 
 depth_models <- list(global_mod = global_dep_mod,
                      base_mod = base_dep_mod,
@@ -328,11 +324,11 @@ depth_models <- list(global_mod = global_dep_mod,
 
 #### Save depth models 
 ### Choose the name of the def !
-# fix = Depth_Models_OISST_Fix.RDS
-# detrended =  Depth_Models_OISST_detrended.RDS
-# saveRDS(depth_models,"results/Models/Depth_Models_OISST_Fix.RDS")
+# fix = Depth_Models_OISST_Fix_ordinal.RDS
+# detrended =  Depth_Models_OISST_detrended_ordinal.RDS
+# saveRDS(depth_models,"results/Models/Depth_Models_OISST_Fix_ordinal.RDS")
 
-######### Activity Models #########
+######## Activity Models #########
 
 hist(MHWs_fish_data$activity) # Check activity distribution 
 # Remove Serial_fish_id levels that have only NA values 
@@ -408,7 +404,7 @@ ggplot(MHWs_fish_data_act_filtered,aes(x=real_datetime,y=activity))+
   ) 
 
 # Look for missing data at specific time of day 
-ggplot(MHWs_fish_data_act_filtered,aes(x=DecimalTimeOfDay,y=activity))+
+ggplot(MHWs_fish_data_act_filtered,aes(x=TimeOrdinal,y=activity))+
   geom_point() +
   theme_minimal() +
   facet_wrap(~ Serial_fish_id,scales="free_y")+
@@ -419,13 +415,13 @@ ggplot(MHWs_fish_data_act_filtered,aes(x=DecimalTimeOfDay,y=activity))+
   ) 
 
 ## Filter based on previous plot
-MHWs_fish_data_act_filtered <- MHWs_fish_data_act_filtered %>% filter( Serial_fish_id!="7_1273489" & Serial_fish_id!="1_1212923" & Serial_fish_id!="2_1255785" & Serial_fish_id!="2_1255803" &Serial_fish_id!="3_1255791" & Serial_fish_id!="3_1255800"& Serial_fish_id!="3_1255815" & Serial_fish_id!="4_1255791"& Serial_fish_id!="4_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="4_1255815" & Serial_fish_id!="5_1255791" & Serial_fish_id!="5_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="5_1255815")
+MHWs_fish_data_act_filtered <- MHWs_fish_data_act_filtered %>% filter( Serial_fish_id!="7_1273489" & Serial_fish_id!="1_1212923" & Serial_fish_id!="2_1255785" & Serial_fish_id!="2_1255803" &Serial_fish_id!="3_1255791" & Serial_fish_id!="3_1255800"& Serial_fish_id!="3_1255815" & Serial_fish_id!="4_1255791"& Serial_fish_id!="4_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="4_1255815" & Serial_fish_id!="5_1255791" & Serial_fish_id!="5_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="5_1255815" & Serial_fish_id!="5_1255814")
 
 ## OISST Fix fish filter
 # Serial_fish_id!="7_1273489" & Serial_fish_id!="1_1212923" & Serial_fish_id!="2_1255785" & Serial_fish_id!="2_1255803" &
 # Serial_fish_id!="3_1255791" & Serial_fish_id!="3_1255800"& Serial_fish_id!="3_1255815" & Serial_fish_id!="4_1255791"&
 # Serial_fish_id!="4_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="4_1255815" & Serial_fish_id!="5_1255791" &
-# Serial_fish_id!="5_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="5_1255815"
+# Serial_fish_id!="5_1255800" & Serial_fish_id!="4_1255814" & Serial_fish_id!="5_1255815" & Serial_fish_id!="5_1255814"
 
 ## OISST detrended fish filter
 # Serial_fish_id!="1_1212923" & Serial_fish_id!="2_1255791" & Serial_fish_id!="2_1255800" & Serial_fish_id!="3_1255806" &
@@ -438,31 +434,31 @@ hist(MHWs_fish_data_act_filtered$activity)
 # Time of day = DecimalTimeOfDay
 # Ordinal scale = TimeOrdinal
 
-global_act_mod <-  bam(activity~s(DecimalTimeOfDay,bs="cc",k=20),
+global_act_mod <-  bam(activity~s(TimeOrdinal,bs="cc",k=20),
                        MHWs_fish_data_act_filtered,
                        method = "REML", family = "tw",
                        correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 
-base_act_mod <- bam(activity~s(DecimalTimeOfDay,bs="cc",k=20) +
-                      s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")),
+base_act_mod <- bam(activity~s(TimeOrdinal,bs="cc",k=20) +
+                      s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")),
                     MHWs_fish_data_act_filtered,
                     method = "REML", family = "tw",
                     correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 act_sum_base_mod <- summary(base_act_mod)
 
-intercept_act_mod <- bam(activity~ Before_After + s(DecimalTimeOfDay,bs="cc",k=20) + 
-                           s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")),
+intercept_act_mod <- bam(activity~ Before_After + s(TimeOrdinal,bs="cc",k=20) + 
+                           s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")),
                          MHWs_fish_data_act_filtered,
                          method = "REML", family = "tw",  
                          correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 
-smooth_act_mod <- bam(activity~s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
-                        s(DecimalTimeOfDay,by=Before_After,bs="cc",k=20),
+smooth_act_mod <- bam(activity~s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
+                        s(TimeOrdinal,by=Before_After,bs="cc",k=20),
                       MHWs_fish_data_act_filtered, method = "REML", family ="tw",
                       correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 
-full_act_mod <- bam(activity~s(DecimalTimeOfDay,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
-                      Before_After + s(DecimalTimeOfDay,by=Before_After,bs="cc",k=20),MHWs_fish_data_act_filtered,
+full_act_mod <- bam(activity~s(TimeOrdinal,Serial_fish_id, bs = "fs", k = 6,m=1,xt = list(bs = "cc")) +
+                      Before_After + s(TimeOrdinal,by=Before_After,bs="cc",k=20),MHWs_fish_data_act_filtered,
                     method = "REML", family = "tw",
                     correlation = corAR1(form = ~real_datetime|Serial_fish_id),parallel = T)
 act_sum_full_mod <- summary(full_act_mod)
@@ -484,9 +480,9 @@ activity_models <- list(global_mod = global_act_mod,
                         base_sum = act_sum_base_mod,
                         full_mod_sum = act_sum_full_mod)
 
-#### Save depth models 
+#### Save activity models 
 ### Choose the name of the def !
-# fix = Activity_Models_OISST_Fix.RDS
-# detrended =  Activity_Models_OISST_detrended.RDS
-# saveRDS(depth_models,"results/Models/Activity_Models_OISST_Fix.RDS")
+# fix = Activity_Models_OISST_Fix_ordinal.RDS
+# detrended =  Activity_Models_OISST_detrended_ordinal.RDS
+# saveRDS(activity_models,"results/Models/Activity_Models_OISST_Fix_ordinal.RDS")
 

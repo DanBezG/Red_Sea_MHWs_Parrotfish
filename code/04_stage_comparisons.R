@@ -13,6 +13,19 @@ sum_heat_wave_day <- readrds("results/Individual Heatwaves/OISST_Fix_MHW_Stage_s
 # tags metadata
 tags_metadata <- read.xlsx("data/parrotfish data/parrotfish_metadata.xlsx")
 
+# MHWs definition
+MHWs_Eilat_Fix_OISST <- read.xlsx("data/MHWs_def/MHW_OISST_Events_RedSea_Fix.xlsx",sheet = "Short_MHW_Events_Fixed")
+
+#Formatting
+MHWs_Eilat_Fix_OISST$date_start <- as.Date(MHWs_Eilat_Fix_OISST$date_start,origin = "1899-12-30")
+MHWs_Eilat_Fix_OISST$date_peak <- as.Date(MHWs_Eilat_Fix_OISST$date_peak,origin = "1899-12-30")
+MHWs_Eilat_Fix_OISST$date_end <- as.Date(MHWs_Eilat_Fix_OISST$date_end,origin = "1899-12-30")
+MHWs_Eilat_Fix_OISST$start_1.5 <- as.Date(MHWs_Eilat_Fix_OISST$start_1.5,origin = "1899-12-30")
+MHWs_Eilat_Fix_OISST$end_1.5 <- as.Date(MHWs_Eilat_Fix_OISST$end_1.5,origin = "1899-12-30")
+MHWs_Eilat_Fix_OISST$Serial <- c(1:dim(MHWs_Eilat_Fix_OISST)[1])
+MHWs_Eilat_Fix_OISST <- MHWs_Eilat_Fix_OISST %>% relocate(Serial,.before = date_start)
+
+
 # Nest the data by Serial 
 nest_hw_day <- sum_heat_wave_day %>% 
   ungroup() %>%
@@ -114,7 +127,7 @@ MHW_disp_comparison <- sum_heat_wave_day %>%
 MHWs_comparison <- merge(MHWs_comparison,MHW_disp_comparison,by=c("Serial","fish_id","Stage_period"),all.x = T)
 rm(MHW_disp_comparison)
 
-MHWs_comparison <- merge(MHWs_comparison,MHWs_Eilat,by = "Serial") %>%
+MHWs_comparison <- merge(MHWs_comparison,MHWs_Eilat_Fix_OISST,by = "Serial") %>%
   select(-Fish_IDs)
 
 # Add species information from the metadata

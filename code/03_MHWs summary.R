@@ -156,8 +156,6 @@ MHWs_Eilat_Fix_OISST$date_peak <- as.Date(MHWs_Eilat_Fix_OISST$date_peak,origin 
 MHWs_Eilat_Fix_OISST$date_end <- as.Date(MHWs_Eilat_Fix_OISST$date_end,origin = "1899-12-30")
 MHWs_Eilat_Fix_OISST$start_1.5 <- as.Date(MHWs_Eilat_Fix_OISST$start_1.5,origin = "1899-12-30")
 MHWs_Eilat_Fix_OISST$end_1.5 <- as.Date(MHWs_Eilat_Fix_OISST$end_1.5,origin = "1899-12-30")
-MHWs_Eilat_Fix_OISST$start_3 <- as.Date(MHWs_Eilat_Fix_OISST$start_3,origin = "1899-12-30")
-MHWs_Eilat_Fix_OISST$end_3 <- as.Date(MHWs_Eilat_Fix_OISST$end_3,origin = "1899-12-30")
 MHWs_Eilat_Fix_OISST$Serial <- c(1:dim(MHWs_Eilat_Fix_OISST)[1])
 MHWs_Eilat_Fix_OISST <- MHWs_Eilat_Fix_OISST %>% relocate(Serial,.before = date_start)
 
@@ -166,8 +164,6 @@ MHWs_Eilat_detrended_OISST$date_start <- as.Date(MHWs_Eilat_detrended_OISST$date
 MHWs_Eilat_detrended_OISST$date_end <- as.Date(MHWs_Eilat_detrended_OISST$date_end,origin = "1899-12-30")
 MHWs_Eilat_detrended_OISST$start_1.5 <- as.Date(MHWs_Eilat_detrended_OISST$start_1.5,origin = "1899-12-30")
 MHWs_Eilat_detrended_OISST$end_1.5 <- as.Date(MHWs_Eilat_detrended_OISST$end_1.5,origin = "1899-12-30")
-MHWs_Eilat_detrended_OISST$start_3 <- as.Date(MHWs_Eilat_detrended_OISST$start_3,origin = "1899-12-30")
-MHWs_Eilat_detrended_OISST$end_3 <- as.Date(MHWs_Eilat_detrended_OISST$end_3,origin = "1899-12-30")
 MHWs_Eilat_detrended_OISST$Serial <- c(1:dim(MHWs_Eilat_detrended_OISST)[1])
 MHWs_Eilat_detrended_OISST <- MHWs_Eilat_detrended_OISST %>% relocate(Serial,.before = date_start)
 # Removes date peak
@@ -214,7 +210,7 @@ for (event in 1:dim(MHWs_Eilat)[1]) {
     MHW_Data <- MHW_Data %>% arrange(fish_id,real_datetime)
     
     # Need to change the column numbers depend on the definition df
-    # 20 for fix, 18 for detrended
+    # 20 for fix, 19 for detrended
     window_size <- 20
     start_window <-MHWs_Eilat[event,window_size]
     end_window <-MHWs_Eilat[event,window_size+2]
