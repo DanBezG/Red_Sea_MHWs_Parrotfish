@@ -212,18 +212,12 @@ for (event in 1:dim(MHWs_Eilat)[1]) {
     # Need to change the column numbers depend on the definition df
     # 20 for fix, 19 for detrended
     window_size <- 20
-    start_window <-MHWs_Eilat[event,window_size]
-    end_window <-MHWs_Eilat[event,window_size+2]
-      
-    # Filter data to the specific time window
-    Windowed_MHW <- MHW_Data %>% filter(date >= start_window & date<= 
-                                            end_window)
       
     # Create hour bins and check for sufficient observations (> 2 observations)
     obs_thrsh <- 2
-      Windowed_MHW$hour_bin_code <- cut(Windowed_MHW$real_datetime,breaks = "1 hour")
-      Windowed_MHW$hour_bin_code <-  paste(Windowed_MHW$fish_id,Windowed_MHW$hour_bin_code,Windowed_MHW$Period)
-      bins_count <- Windowed_MHW %>%  
+      MHW_Data$hour_bin_code <- cut(MHW_Data$real_datetime,breaks = "1 hour")
+      MHW_Data$hour_bin_code <-  paste(MHW_Data$fish_id,MHW_Data$hour_bin_code,MHW_Data$Period)
+      bins_count <- MHW_Data %>%  
         group_by(hour_bin_code) %>% 
         summarise(
           non_na_activity = sum(!is.na(activity)),
@@ -235,7 +229,7 @@ for (event in 1:dim(MHWs_Eilat)[1]) {
       bins_count_dis <- bins_count[bins_count$non_na_dis >= obs_thrsh,] %>% select(hour_bin_code,non_na_dis)
       
       # Calculate summary statistics for activity
-      temp_sum_heat_wave_act <- Windowed_MHW %>%
+      temp_sum_heat_wave_act <- MHW_Data %>%
         filter(hour_bin_code %in% bins_count_act$hour_bin_code)%>%
         group_by(fish_id,Before_After) %>%
         summarise_at(vars(activity),funs(mean_activity = mean(.,na.rm=T),
@@ -244,7 +238,7 @@ for (event in 1:dim(MHWs_Eilat)[1]) {
       temp_sum_heat_wave_act <- temp_sum_heat_wave_act[temp_sum_heat_wave_act$act_n>50,]
       
       # Calculate summary statistics for depth
-      temp_sum_heat_wave_dep <- Windowed_MHW %>%
+      temp_sum_heat_wave_dep <- MHW_Data %>%
         filter(hour_bin_code %in% bins_count_dep$hour_bin_code)%>%
         group_by(fish_id,Before_After) %>%
         summarise_at(vars(depth),funs(mean_depth = mean(.,na.rm=T),
@@ -253,7 +247,7 @@ for (event in 1:dim(MHWs_Eilat)[1]) {
       temp_sum_heat_wave_dep <- temp_sum_heat_wave_dep[temp_sum_heat_wave_dep$dep_n>50,]
       
       # Calculate summary statistics for displacement
-      temp_sum_heat_wave_disp <- Windowed_MHW %>%
+      temp_sum_heat_wave_disp <- MHW_Data %>%
         filter(hour_bin_code %in% bins_count_dis$hour_bin_code)
       if(nrow(temp_sum_heat_wave_disp)>0){
         temp_sum_heat_wave_disp <- MHW_distance_metrics(temp_sum_heat_wave_disp)[[1]]
@@ -270,12 +264,12 @@ for (event in 1:dim(MHWs_Eilat)[1]) {
     
   }
 }
-rm(temp_sum_heat_wave,temp_sum_heat_wave_act,temp_sum_heat_wave_dep,temp_sum_heat_wave_disp,bins_count,bins_count_act,bins_count_dep,bins_count_dis,Windowed_MHW,filter_fish)
+rm(temp_sum_heat_wave,temp_sum_heat_wave_act,temp_sum_heat_wave_dep,temp_sum_heat_wave_disp,bins_count,bins_count_act,bins_count_dep,bins_count_dis,MHW_Data,filter_fish)
 # Reorganize columns in the summary dataframe
 sum_heat_wave_day <- sum_heat_wave_day %>% relocate(Serial,.before = fish_id)
 
 # Add species information from the metadata
-stat_tags_metadata_parrot <- tags_metadata_parrot %>% 
+stat_tags_metadata_parrot <- tags_metadata %>% 
   select(fish_id,species) 
 sum_heat_wave_day <- distinct(merge(sum_heat_wave_day,stat_tags_metadata_parrot,by = "fish_id"))
 sum_heat_wave_day$Serial_fish_id <- paste(sum_heat_wave_day$Serial,sum_heat_wave_day$fish_id,sep = "_")
@@ -333,9 +327,9 @@ shapiro.test(activity_diff_MA)
 
 print(paste("Number of fish for paired t test:",length(unique(act_complete_triplets_day$Serial_fish_id))))
 
-t.test(activity_wide$Before, activity_wide$After, paired = TRUE)
-t.test(activity_wide$Before, activity_wide$MHW, paired = TRUE)
-t.test(activity_wide$MHW, activity_wide$After, paired = TRUE)
+t.test(activity_wide$After, activity_wide$Before, paired = TRUE)
+t.test(activity_wide$MHW, activity_wide$Before, paired = TRUE)
+t.test(activity_wide$After, activity_wide$MHW, paired = TRUE)
 
 
 ################### Depth Test #######################
@@ -389,9 +383,9 @@ shapiro.test(depth_diff_MA)
 
 print(paste("Number of fish for paired t test:",length(unique(dep_complete_triplets_day$Serial_fish_id))))
 
-t.test(depth_wide$Before, depth_wide$After, paired = TRUE)
-t.test(depth_wide$Before, depth_wide$MHW, paired = TRUE)
-t.test(depth_wide$MHW, depth_wide$After, paired = TRUE)
+t.test(depth_wide$After, depth_wide$Before, paired = TRUE)
+t.test(depth_wide$MHW, depth_wide$Before, paired = TRUE)
+t.test(depth_wide$After,depth_wide$MHW, paired = TRUE)
 
 # For non normal - depth detrended
 wilcox.test(depth_wide$Before, depth_wide$After, paired = TRUE)
@@ -401,8 +395,9 @@ wilcox.test(depth_wide$MHW, depth_wide$After, paired = TRUE)
 ################### Distance Test ####################### 
 
 # Clean the data for displacment
+disp_test_df <- sum_heat_wave_day
 # Remove unwanted columns
-disp_test_df <- disp_test_df[,-5:-12]
+disp_test_df <- disp_test_df[,-4:-11]
 # Remove duplicates
 disp_test_df <- disp_test_df %>% distinct()
 disp_test_df <- disp_test_df %>% filter(!is.na(mean_disp_max))
@@ -450,11 +445,11 @@ shapiro.test(disp_diff_MA)
 
 print(paste("Number of fish for parired t test:",length(unique(disp_complete_triplets$Serial_fish_id))))
 
-t.test(disp_wide$Before, disp_wide$After, paired = TRUE)
-t.test(disp_wide$Before, disp_wide$MHW, paired = TRUE)
-t.test(disp_wide$MHW, disp_wide$After, paired = TRUE) 
-
-effectsize::effectsize(t.test(disp_wide$Before, disp_wide$After, paired = TRUE))
+t.test(disp_wide$After, disp_wide$Before, paired = TRUE)
+t.test(disp_wide$MHW, disp_wide$Before, paired = TRUE)
+t.test(disp_wide$After, disp_wide$MHW, paired = TRUE) 
+# Correction for small sample size
+effectsize::hedges_g(t.test(disp_wide$After, disp_wide$Before, paired = TRUE))
 
 
 
