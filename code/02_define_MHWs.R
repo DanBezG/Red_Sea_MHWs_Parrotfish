@@ -2,7 +2,7 @@
 
 install.packages("pacman")
 library(pacman)
-p_load(heatwaveR, lubridate, tidyverse, sjPlot,openxlsx)
+p_load(heatwaveR, lubridate, tidyverse, sjPlot,openxlsx,gratia)
 
 ###################### Functions ######################
 
@@ -134,7 +134,7 @@ addWorksheet(excel,sheetName = "MHW_Events")
 addWorksheet(excel,sheetName = "Climatelogy")
 writeData(excel,"MHW_Events",MHW_events)
 writeData(excel,"Climatelogy",climatelogy)
-saveWorkbook(excel,"data/MHWs_def/MHW_OISST_Events_RedSea_Fix")
+saveWorkbook(excel,"data/MHWs_def/MHW_OISST_Events_RedSea_Fix.xlsx")
 
 
 ## Detrended baseline
@@ -167,17 +167,12 @@ detrended_mhws <- Detrend_MHW_days_to_MHWs(MHW_climatelogy_tresh,2,10,9,3,7)
 excel <- createWorkbook()
 addWorksheet(excel,sheetName = "MHW_Events")
 addWorksheet(excel,sheetName = "Climatelogy")
-writeData(excel,"MHW_Events",mhws)
+writeData(excel,"MHW_Events",detrended_mhws)
 writeData(excel,"Climatelogy",MHW_climatelogy_tresh)
-saveWorkbook(excel,"data/MHWs_def/MHW_IUI_Events_RedSea_Jacox.xlsx")
+saveWorkbook(excel,"data/MHWs_def/MHW_OISST_Events_RedSea_Jacox.xlsx")
 
 
-# The next step - filtering to short period mhws (< 1 month), assign appropraite fish and calculate before and after limits 
-# was done manually and the results for each definition can be found in the MHWs_def directory under the same names they appear
-# in this code
-
-
-## Compare IUI and OISST
+########## Appendix - Compare IUI and OISST
 IUI_daily_temp <- IUI_daily_temp %>%
   mutate(date = as.Date(Doy - 1, origin = paste0(Year, "-01-01")))
 OISST_data_red <- OISST_data_red %>%
