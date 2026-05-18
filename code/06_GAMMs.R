@@ -217,7 +217,7 @@ for (baseline in definitions) {
     print(Anova(glmm_intensity, type = "III"))
     print(summary(glmm_intensity))
     
-    summary_filename <- paste0("results/Detection_Summary_", baseline, "_", win, ".csv")
+    summary_filename <- paste0("results/Detection Tests/Detection_Summary_", baseline, "_", win, ".csv")
     write.csv(detection_summary, summary_filename, row.names = FALSE)
     cat("Saved Detection Summary:", summary_filename, "\n")
     
@@ -365,7 +365,7 @@ for (baseline in definitions) {
       aic_table     = dep_aic_table
     )
     
-    depth_filename <- paste0("results/Models/Depth_Models_OISST_", baseline, "_ordinal_", win, ".RDS")
+    depth_filename <- paste0("results/GAM/Depth_Models_OISST_", baseline, "_ordinal_", win, ".RDS")
     saveRDS(depth_models, depth_filename)
     cat("Saved Depth Models:", depth_filename, "\n")
     
@@ -486,7 +486,7 @@ for (baseline in definitions) {
       aic_table     = act_aic_table
     )
     
-    depth_filename <- paste0("results/Models/Depth_Models_OISST_", baseline, "_ordinal_", win, ".RDS")
+    depth_filename <- paste0("results/GAM/Depth_Models_OISST_", baseline, "_ordinal_", win, ".RDS")
     saveRDS(depth_models, depth_filename)
     
     cat("\n>>> WINNING ACTIVITY MODEL (Parsimony):", best_act_name, "<<<\n")
@@ -505,7 +505,7 @@ cat("\n!!! ALL RUNS COMPLETED SUCCESSFULLY !!!\n")
 cat("\n--- Checking and Correcting Autocorrelation for Depth ---\n")
 
 # Load model list to evaluate AR1 correlation
-ac_model_list <- readRDS("results/Models/Activity_Models_OISST_detrended_ordinal_1.5.RDS")
+ac_model_list <- readRDS("results/GAM/Activity_Models_OISST_detrended_ordinal_1.5.RDS")
 models_to_compare <- ac_model_list[sapply(ac_model_list, function(x) inherits(x, "gam"))]
 aic_table <- imap_dfr(models_to_compare, ~{
   data.frame(
@@ -549,4 +549,4 @@ summary(best_mod_ar1)
 ac_model_list$best_gam_mod_ar1 <- best_mod_ar1
 ac_model_list$rho <- rho_val
 
-# saveRDS(ac_model_list,"results/Models/Activity_Models_OISST_detrended_ordinal_1.5.RDS")
+# saveRDS(ac_model_list,"results/GAM/Activity_Models_OISST_detrended_ordinal_1.5.RDS")

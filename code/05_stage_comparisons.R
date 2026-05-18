@@ -194,7 +194,7 @@ MHWs_comparison <- MHWs_comparison %>%
 ### Choose the name of the database and def !
 # fix = OISST_Fix_MHW_Stage_comparison.RDS
 # detrended =  OISST_detrended_MHW_Stage_comparison.RDS
-# saveRDS(MHWs_comparison,"results/Individual Heatwaves/1.5/OISST_detrended_MHW_Stage_comparison.RDS")
+# saveRDS(MHWs_comparison,"results/MHW Characteristics lm/OISST_detrended_MHW_Stage_comparison.RDS")
 
 
 ## Check relationship with MHWs characteristics - linear models!
@@ -260,7 +260,7 @@ model_summaries <- bind_rows(model_summaries, .id = "model_num")
 ### Choose the name of the def !
 # fix = OISST_Fix_MHW_lm_summary.RDS
 # detrended =  OISST_detrended_lm_summary.RDS
-# saveRDS(MHWs_comparison,"results/Individual Heatwaves/1.5/OISST_detrended_MHW_lm_summary_1.5.RDS")
+# saveRDS(MHWs_comparison,"results/MHW Characteristics lm/OISST_detrended_MHW_lm_summary_1.5.RDS")
 
 
 

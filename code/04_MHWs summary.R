@@ -142,7 +142,7 @@ MHW_distance_metrics <- function(MHW_data) {
 create_diganostics_pdf <- function(target_window,baseline_type,all_models)
 {
   mods <- all_models[[target_window]]$Models
-  pdf_filename <- paste0("results/Individual Heatwaves/Diagnostics_Window_", target_window, "_", baseline_type, ".pdf")
+  pdf_filename <- paste0("results/Mean Models/Diagnostics_Window_", target_window, "_", baseline_type, ".pdf")
   pdf(file = pdf_filename, width = 10, height = 8)
   
   print(appraise(mods$Activity$Maximal) + patchwork::plot_annotation(title = paste("Activity - Maximal Model - Window", target_window)))
@@ -449,12 +449,12 @@ for (current_window in time_windows) {
 ### Choose the name of the database and def 
 # fix = All_Windows_Models_OISST_Fix.RDS
 # detrended =  All_Windows_Models_OISST_detrended.RDS
-# saveRDS(all_windows_results, "results/Individual Heatwaves/All_Windows_Models_OISST_detrended.RDS")
+# saveRDS(all_windows_results, "results/Mean Models/All_Windows_Models_OISST_detrended.RDS")
 
 
 ######################  Diagnostics  ##########################
 ###### Choose baseline and timeframe window
-all_windows_results <- readRDS("results/Individual Heatwaves/All_Windows_Models_OISST_Fix.RDS")
+all_windows_results <- readRDS("results/Mean Models/All_Windows_Models_OISST_Fix.RDS")
 
 ###################### AIC Model Selection Summary  ##########################
 
