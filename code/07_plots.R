@@ -17,15 +17,15 @@ MHWs_Eilat_Fix_OISST <- read.xlsx("data/MHWs_def/MHWs_filtered/MHW_OISST_Events_
 Eilat_Fix_OISST_temperature <- read.xlsx("data/MHWs_def/MHWs_filtered/MHW_OISST_Events_RedSea_Fix_filtered.xlsx",sheet = "Climatelogy")
 
 # Load pre-computed GAM models and statistical comparison datasets
-all_heat_wave_sum <- readRDS("results/Individual Heatwaves/All_Windows_Models_OISST_detrended.RDS")
-MHWs_comparison   <- readRDS("results/Individual Heatwaves/1.5/OISST_detrended_MHW_Stage_comparison.RDS")
-act_models        <- readRDS("results/Models/Activity_Models_OISST_detrended_ordinal_1.5.RDS")
-dep_models        <- readRDS("results/Models/Depth_Models_OISST_detrended_ordinal_1.5.RDS")
+all_heat_wave_sum <- readRDS("results/Mean Models/All_Windows_Models_OISST_Fix.RDS")
+MHWs_comparison   <- readRDS("results/MHW Characteristics lm/OISST_Fix_MHW_Stage_comparison_1week.RDS")
+act_models        <- readRDS("results/GAM/Main analyses/Activity_Models_OISST_Fix_ordinal_1week.RDS")
+dep_models        <- readRDS("results/GAM/Main analyses/Depth_Models_OISST_Fix_ordinal_1week.RDS")
 
 # Prepare "Triplets" (data filtered to include only fish present in all 3 stages)
-act_triplets  <- all_heat_wave_sum$`1.5`$Triplets$Activity %>% mutate(Before_After = factor(Before_After, levels = stage_levels))
-dep_triplets  <- all_heat_wave_sum$`1.5`$Triplets$Depth    %>% mutate(Before_After = factor(Before_After, levels = stage_levels))
-disp_triplets <- all_heat_wave_sum$`1.5`$Triplets$Displacement %>% mutate(Before_After = factor(Before_After, levels = stage_levels))
+act_triplets  <- all_heat_wave_sum$`1week`$Triplets$Activity %>% mutate(Before_After = factor(Before_After, levels = stage_levels))
+dep_triplets  <- all_heat_wave_sum$`1week`$Triplets$Depth    %>% mutate(Before_After = factor(Before_After, levels = stage_levels))
+disp_triplets <- all_heat_wave_sum$`1week`$Triplets$Displacement %>% mutate(Before_After = factor(Before_After, levels = stage_levels))
 
 # Append a dummy row for S. niger to force it to appear in the combined plots' legend
 act_triplets <- act_triplets %>% bind_rows(data.frame(species = "S. niger", Before_After = "Before", mean_activity = NA))
@@ -93,21 +93,23 @@ get_gam_preds <- function(model, type = "response") {
 }
 
 # Generate population-level diel prediction plot for Activity
-act_models$mhw_df$Before_After <- factor(act_models$dep_df$Before_After, levels = stage_levels)
+act_models$mhw_df$Before_After <- factor(act_models$mhw_df$Before_After, levels = stage_levels)
 act_mod_p <- ggplot(get_gam_preds(act_models$best_mod), aes(x = TimeOrdinal, y = predicted, color = Before_After)) +
   geom_rect(xmin = -Inf, xmax = 2, ymin = -Inf, ymax = Inf, fill = "gray", alpha = 0.25, color = NA, inherit.aes = FALSE) +
   geom_rect(xmin = 4, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "gray", alpha = 0.25, color = NA, inherit.aes = FALSE) +
-  # geom_point(data = act_models$dep_df, aes(x = TimeOrdinal,y = activity),size = 1) +
+  geom_point(data = act_models$mhw_df, aes(x = TimeOrdinal,y = activity),size = 1) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = Before_After), alpha = 0.2, color = NA) +
   geom_line(linewidth = 1.2) + scale_color_manual(values = mhw_colors) + scale_fill_manual(values = mhw_colors) +
   scale_x_continuous(expand = c(0,0)) + labs(y = expression("Activity [" * m ~ s^{-2} * "]"), x = "Relative time of day") + main_theme + 
   guides(color = guide_legend(override.aes = list(size = 3)))
 
+# ggsave("results/plots/Figure_S10_1week.svg", act_mod_p, width = 15, height = 9)
+
 # Generate population-level diel prediction plot for Depth
 dep_mod_p <- ggplot(get_gam_preds(dep_models$best_gam_mod_ar1, "link"), aes(x = TimeOrdinal, y = predicted, color = Before_After)) +
   geom_rect(xmin = -Inf, xmax = 2, ymin = -Inf, ymax = Inf, fill = "gray", alpha = 0.25, color = NA, inherit.aes = FALSE) +
   geom_rect(xmin = 4, xmax = Inf, ymin = -Inf, ymax = Inf, fill = "gray", alpha = 0.25, color = NA, inherit.aes = FALSE) +
-  geom_point(data = dep_models$dep_df, aes(x = TimeOrdinal,y = depth),size = 1) +
+  geom_point(data = dep_models$mhw_df, aes(x = TimeOrdinal,y = depth),size = 1) +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high, fill = Before_After), alpha = 0.2, color = NA) +
   geom_line(linewidth = 1.2) + scale_color_manual(values = mhw_colors) + scale_fill_manual(values = mhw_colors) +
   scale_y_reverse() + coord_cartesian(ylim = c(14, 0)) + scale_x_continuous(expand = c(0,0)) +
@@ -134,14 +136,14 @@ final_figure2 <- (left_col | right_col) +
   plot_annotation(tag_prefix = '(',tag_levels = 'a', tag_suffix = ')') & 
   theme(legend.position = "top", legend.box = "horizontal")
 
-ggsave("results/plots/Figure_2_Main.svg", x, width = 16, height = 15, dpi = 300)
+ggsave("results/plots/Figure_2_Main_1week.svg", final_figure2, width = 16, height = 15, dpi = 300)
 
 # Assemble and save supplementary figures
 figure_s4 <- (act_mod_p / dep_mod_p) + plot_layout(guides = "collect") & theme(legend.position = "top")
-ggsave("results/plots/Figure_S4.svg", figure_s4, width = 16, height = 15, dpi = 300)
+ggsave("results/plots/Figure_S4_1week.svg", figure_s4, width = 16, height = 15, dpi = 300)
 
-figure_s11 <- dep_mean_p +act_mean_p + act_mod_p
-ggsave("results/plots/Figure_S11.svg", figure_s11, width = 16, height = 12, dpi = 300)
+figure_s9 <- dep_mean_p +act_mean_p + act_mod_p
+ggsave("results/plots/Figure_S9_1week.svg", figure_s11, width = 16, height = 12, dpi = 300)
 
 ################################################################################
 # 8. MODULE C: FULL REGRESSIONS (All Predictors)
@@ -173,7 +175,7 @@ reg_full_dep  <- create_full_reg("delta_depth", expression(Delta~"Depth [m]"))
 reg_full_disp <- create_full_reg("log_max_displacement", "ln(Displacement ratio)")
 
 combined_reg_full <- (reg_full_act / reg_full_dep / reg_full_disp) + plot_annotation(tag_prefix = '(',tag_levels = 'a',tag_suffix = ')')
-ggsave("results/plots/Figure_S3_Full_Regressions_Fix_1.5.svg", combined_reg_full, width = 18, height = 12)
+ggsave("results/plots/Figure_S3_Full_Regressions_Fix_1week.svg", combined_reg_full, width = 18, height = 12)
 
 ################################################################################
 # 9. MODULE D: MHW METRICS & SST TIMELINE
@@ -270,7 +272,7 @@ get_gam_preds <- function(model, original_df, type = "response") {
 }
 
 # Generate individual activity predictions and calculate stage differences (Delta)
-act_indiv_preds <- get_gam_preds(act_models$best_mod, act_models$dep_df)
+act_indiv_preds <- get_gam_preds(act_models$best_mod, act_models$mhw_df)
 
 # 1. Take the predictions we already generated for the individuals
 act_delta_data <- act_indiv_preds %>%
@@ -311,15 +313,15 @@ act_delta_p <- ggplot(act_delta_data, aes(x = TimeOrdinal, y = Delta_Activity, c
   # Note: Use only the colors for MHW and After from your palette
   scale_color_manual(values = mhw_colors[c("MHW", "After")]) +
   scale_x_continuous(expand = c(0,0)) + 
-  coord_cartesian(ylim = c(-0.12,0))+
-  scale_y_continuous(breaks = seq(-0.12,0,0.04))+
+  coord_cartesian(ylim = c(0,0.06))+
+  scale_y_continuous(breaks = seq(0,0.09,0.03))+
   labs(y = expression(Delta * " Activity [" * m ~ s^{-2} * "]"), 
        x = "Relative time of day")+ 
   main_theme +
   guides(color = guide_legend(override.aes = list(linewidth = 2)))
 
 # --- ACTIVITY PLOT (Individual Level) ---
-act_mod_p_ind <- ggplot( get_gam_preds(act_models$best_mod, act_models$dep_df), 
+act_mod_p_ind <- ggplot( get_gam_preds(act_models$best_mod, act_models$mhw_df), 
                          aes(x = TimeOrdinal, y = predicted, color = Before_After)) +
   # Background shading for day/night periods
   geom_rect(xmin = -Inf, xmax = 2, ymin = -Inf, ymax = Inf, fill = "gray", alpha = 0.25, color = NA, inherit.aes = FALSE) +
@@ -340,8 +342,10 @@ act_mod_p_ind <- ggplot( get_gam_preds(act_models$best_mod, act_models$dep_df),
   # Customize legend appearance
   guides(color = guide_legend(override.aes = list( size = 3)))
 
+ggsave("results/plots/Figure_S11_1week.svg", act_mod_p_ind, width = 15, height = 9)
+
 # --- DEPTH PLOT (Individual Level) ---
-dep_mod_p_ind <- ggplot(get_gam_preds(dep_models$best_gam_mod_ar1, dep_models$dep_df, type = "link"), 
+dep_mod_p_ind <- ggplot(get_gam_preds(dep_models$best_gam_mod_ar1, dep_models$mhw_df, type = "link"), 
                         aes(x = TimeOrdinal, y = predicted, color = Before_After)) +
   # Background shading
   geom_rect(xmin = -Inf, xmax = 2, ymin = -Inf, ymax = Inf, fill = "gray", alpha = 0.25, color = NA, inherit.aes = FALSE) +
@@ -355,68 +359,88 @@ dep_mod_p_ind <- ggplot(get_gam_preds(dep_models$best_gam_mod_ar1, dep_models$de
   # Styling and axis inversion for depth
   scale_color_manual(values = mhw_colors, name = "MHW Stage") + 
   scale_fill_manual(values = mhw_colors, name = "MHW Stage") +
-  scale_y_reverse(breaks = seq(0,24,6)) + 
-  coord_cartesian(ylim = c(25, 0)) +
+  scale_y_reverse() + #breaks = seq(0,24,6)
+  # coord_cartesian(ylim = c(25, 0)) +
   scale_x_continuous(expand = c(0,0)) + 
   labs(y = "Mean Depth [m]", x = "Relative time of day") + 
   main_theme + 
   guides(color = guide_legend(override.aes = list(linewidth = 2)))
 
-# ggsave("results/plots/Figure_S6.svg",act_mod_p_ind, width = 15, height = 9)
-# ggsave("results/plots/Figure_S5.svg", dep_mod_p_ind, width = 15, height = 9)
+# ggsave("results/plots/Figure_S6_1week.svg",act_delta_p, width = 15, height = 9)
+# ggsave("results/plots/Figure_S5_1week.svg", dep_mod_p_ind, width = 15, height = 9)
 
 
 ##### Fish Summary Table: Counting Unique MHW Events per Fish across All Datasets #####
 # Define target column name
 mhw_col_name <- "Serial" 
 
-# 1. Helper function to count unique MHW events per fish
-# Returns a summary table with fish_id and the count of unique events
+# Helper function to count unique MHW events and mark participation
 get_mhw_counts <- function(df, source_name) {
   if (is.null(df) || nrow(df) == 0) return(NULL)
   
   df %>%
-    # Ensure fish_id is character and remove NAs
-    filter(!is.na(fish_id)) %>%
-    mutate(Serial_fish_id = as.character(Serial_fish_id)) %>%
-    group_by(Serial_fish_id) %>%
-    summarise(!!paste0("mhw_count_", source_name) := n_distinct(get(mhw_col_name))) %>%
+    filter(!is.na(Serial_fish_id)) %>%
+    group_by(fish_id) %>%
+    summarise(
+      # Count unique MHWs this fish experienced in this specific dataset
+      !!paste0("mhw_count_", source_name) := n_distinct(get(mhw_col_name)),
+      # Boolean flag to easily see if the fish participated in this analysis
+      !!paste0("in_", source_name) := TRUE
+    ) %>%
     ungroup()
 }
 
-# 2. Extract counts from all 5 sources
-# We use the specific dataframe locations from your console output
+# Extract counts and participation from all 5 sources
 counts_list <- list(
   get_mhw_counts(act_triplets, "act_trip"),
   get_mhw_counts(dep_triplets, "dep_trip"),
   get_mhw_counts(disp_triplets, "disp_trip"),
-  get_mhw_counts(act_models$dep_df, "act_mod"),
-  get_mhw_counts(dep_models$dep_df, "dep_mod")
+  get_mhw_counts(act_models$mhw_df, "act_model"),  # Updated to mhw_df
+  get_mhw_counts(dep_models$mhw_df, "dep_model")   # Updated to mhw_df
 )
 
-# 3. Create the master list of all unique fish IDs
-all_fish_ids <- unique(unlist(lapply(counts_list, function(x) x$Serial_fish_id)))
+# Create the master list of all unique fish IDs
+all_fish_ids <- unique(unlist(lapply(counts_list, function(x) x$fish_id)))
 
-# 4. Join all counts into one master summary table
-fish_summary <- data.frame(Serial_fish_id = all_fish_ids)
+# Join all data into one master summary table
+fish_summary <- data.frame(fish_id = all_fish_ids)
 
 for (count_df in counts_list) {
   if (!is.null(count_df)) {
-    fish_summary <- left_join(fish_summary, count_df, by = "Serial_fish_id")
+    fish_summary <- left_join(fish_summary, count_df, by = "fish_id")
   }
 }
 
-# 5. Final polish: Replace NAs with 0 and calculate total stats
+# Final polish: Replace NAs, set logicals, and calculate totals
 fish_summary <- fish_summary %>%
+  # Replace NAs in counts with 0
   mutate(across(starts_with("mhw_count"), ~replace_na(., 0))) %>%
+  # Replace NAs in participation flags with FALSE
+  mutate(across(starts_with("in_"), ~replace_na(., FALSE))) %>%
+  rowwise() %>%
   mutate(
-    # How many datasets does this fish appear in?
-    total_datasets = rowSums(select(., starts_with("mhw_count")) > 0),
-    # Total sum of MHW experiences across all datasets
-    total_mhw_experiences = rowSums(select(., starts_with("mhw_count")))
+    # How many datasets does this fish appear in total?
+    total_analyses_participated = sum(c_across(starts_with("in_"))),
+    # The actual total number of MHWs this fish experienced 
+    # (using max prevents double-counting the same MHW across different dataframes)
+    max_mhw_experienced = max(c_across(starts_with("mhw_count")))
   ) %>%
-  # Sort by fish with the most "action" first
-  arrange(desc(total_mhw_experiences))
+  ungroup() %>%
+  # Sort by fish that experienced the most MHWs, then by participation
+  arrange(desc(max_mhw_experienced), desc(total_analyses_participated))
 
 # View the result
 print(fish_summary)
+
+# Collect all MHW Serial IDs from all 5 datasets
+all_mhw_serials <- c(
+  act_triplets[[mhw_col_name]],
+  dep_triplets[[mhw_col_name]],
+  # disp_triplets[[mhw_col_name]],
+  act_models$mhw_df[[mhw_col_name]],
+  # dep_models$mhw_df[[mhw_col_name]]
+)
+
+# Keep only unique, non-NA values
+unique_mhws_overall <- unique(na.omit(all_mhw_serials))
+total_mhw_count <- length(unique_mhws_overall)

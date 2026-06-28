@@ -1,0 +1,29 @@
+Fix
+
+1week -
+depth - full_dep_mod_sp ; 11 MHWs, 17 unique fish, 31 fish 
+activity - intercept_act_mod 12 MHWs, 24 unique fish, 45 fish 
+
+1.5 -
+depth - full_dep_mod_sp ; 9 MHWs, 16 unique fish, 29 fish 
+activity - intercept_act_mod ; 12 MHWs, 22 unique fish, 47 fish 
+
+3- 
+depth - full_dep_mod_sp_int ; 11 MHWs, 21 unique fish, 35 fish 
+activity - base_act_mod;  12 MHWs, 25 unique fish, 51 fish 
+
+Deternded
+
+1week -
+depth - full_dep_mod_sp ; 4 MHWs, 5 unique fish, 5 fish 
+activity - smooth_act_mod ; 4 MHWs, 9 unique fish, 9 fish 
+
+1.5 -
+depth - intercept_dep_mod_int ; 2 MHWs, 3 unique fish, 3 fish 
+activity - full_act_mod_sp ; 4 MHWs, 10 unique fish, 10 fish 
+
+3 -
+depth - full_dep_mod_sp_int ; 2 MHWs, 4 unique fish, 4 fish 
+activity - full_act_mod_sp ; 4 MHWs, 10 unique fish, 11 fish 
+
+

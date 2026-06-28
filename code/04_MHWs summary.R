@@ -190,8 +190,6 @@ MHWs_Eilat_Fix_OISST$date_start <- convertToDate(MHWs_Eilat_Fix_OISST$date_start
 MHWs_Eilat_Fix_OISST$date_end <- convertToDate(MHWs_Eilat_Fix_OISST$date_end)
 MHWs_Eilat_Fix_OISST$start_1week <- convertToDate(MHWs_Eilat_Fix_OISST$start_1week)
 MHWs_Eilat_Fix_OISST$end_1week <- convertToDate(MHWs_Eilat_Fix_OISST$end_1week)
-MHWs_Eilat_Fix_OISST$start_1 <- convertToDate(MHWs_Eilat_Fix_OISST$start_1)
-MHWs_Eilat_Fix_OISST$end_1 <- convertToDate(MHWs_Eilat_Fix_OISST$end_1)
 MHWs_Eilat_Fix_OISST$start_1.5 <- convertToDate(MHWs_Eilat_Fix_OISST$start_1.5)
 MHWs_Eilat_Fix_OISST$end_1.5 <- convertToDate(MHWs_Eilat_Fix_OISST$end_1.5)
 MHWs_Eilat_Fix_OISST$start_3 <- convertToDate(MHWs_Eilat_Fix_OISST$start_3)
@@ -205,8 +203,6 @@ MHWs_Eilat_detrended_OISST$date_start <- convertToDate(MHWs_Eilat_detrended_OISS
 MHWs_Eilat_detrended_OISST$date_end <- convertToDate(MHWs_Eilat_detrended_OISST$date_end)
 MHWs_Eilat_detrended_OISST$start_1week <- convertToDate(MHWs_Eilat_detrended_OISST$start_1week)
 MHWs_Eilat_detrended_OISST$end_1week <- convertToDate(MHWs_Eilat_detrended_OISST$end_1week)
-MHWs_Eilat_detrended_OISST$start_1 <- convertToDate(MHWs_Eilat_detrended_OISST$start_1)
-MHWs_Eilat_detrended_OISST$end_1 <- convertToDate(MHWs_Eilat_detrended_OISST$end_1)
 MHWs_Eilat_detrended_OISST$start_1.5 <- convertToDate(MHWs_Eilat_detrended_OISST$start_1.5)
 MHWs_Eilat_detrended_OISST$end_1.5 <- convertToDate(MHWs_Eilat_detrended_OISST$end_1.5)
 MHWs_Eilat_detrended_OISST$start_3 <- convertToDate(MHWs_Eilat_detrended_OISST$start_3)
@@ -219,7 +215,7 @@ MHWs_Eilat_detrended_OISST <- MHWs_Eilat_detrended_OISST[-4]
 ####### Choose which dataset to work on through MHWs_Eilat ###########
 
 MHWs_Eilat <- MHWs_Eilat_detrended_OISST  # Set the dataset to work with
-baseline_type <- "detrended"  # fix or detrended
+baseline_type <- "fix"  # fix or detrended
 time_windows <- c("1week","1.5", "3")
 all_windows_results <- list()
 
@@ -389,9 +385,9 @@ for (current_window in time_windows) {
   act_form_main <- as.formula(paste("mean_activity ~ Before_After + species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
   act_form_base <- as.formula(paste("mean_activity ~ Before_After + species + s(fish_id, bs = 're')", re_serial))
   
-  dep_form_max  <- as.formula(paste("log(mean_depth) ~ Before_After * species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
-  dep_form_main <- as.formula(paste("log(mean_depth) ~ Before_After + species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
-  dep_form_base <- as.formula(paste("log(mean_depth) ~ Before_After + species + s(fish_id, bs = 're')", re_serial))
+  dep_form_max  <- as.formula(paste("mean_depth ~ Before_After * species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
+  dep_form_main <- as.formula(paste("mean_depth ~ Before_After + species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
+  dep_form_base <- as.formula(paste("mean_depth ~ Before_After + species + s(fish_id, bs = 're')", re_serial))
   
   disp_form_max  <- as.formula(paste("mean_disp_max ~ Before_After * species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
   disp_form_main <- as.formula(paste("mean_disp_max ~ Before_After + species + scale(Length_cm) + s(fish_id, bs = 're')", re_serial))
@@ -405,9 +401,9 @@ for (current_window in time_windows) {
   
   # Fit GAMs for Depth (using Gaussian distribution on log-transformed data)
   print("Fitting Depth GAMs (Maximal, Main, Basic)...")
-  dep_gam_max  <- gam(dep_form_max,  data = dep_complete_triplets_day, method = "REML")
-  dep_gam_main <- gam(dep_form_main, data = dep_complete_triplets_day, method = "REML")
-  dep_gam_base <- gam(dep_form_base, data = dep_complete_triplets_day, method = "REML")
+  dep_gam_max  <- gam(dep_form_max,  data = dep_complete_triplets_day, method = "REML",family = gaussian(link = "log"))
+  dep_gam_main <- gam(dep_form_main, data = dep_complete_triplets_day, method = "REML",family = gaussian(link = "log"))
+  dep_gam_base <- gam(dep_form_base, data = dep_complete_triplets_day, method = "REML",family = gaussian(link = "log"))
   
   # Fit GAMs for Displacement (skipping if using detrended baseline due to insufficient data)
   print("Fitting Displacement GAMs (with empty-data protection)...")
@@ -449,12 +445,12 @@ for (current_window in time_windows) {
 ### Choose the name of the database and def 
 # fix = All_Windows_Models_OISST_Fix.RDS
 # detrended =  All_Windows_Models_OISST_detrended.RDS
-# saveRDS(all_windows_results, "results/Mean Models/All_Windows_Models_OISST_detrended.RDS")
+# saveRDS(all_windows_results, "results/Mean Models/All_Windows_Models_OISST_Fix.RDS")
 
 
 ######################  Diagnostics  ##########################
 ###### Choose baseline and timeframe window
-all_windows_results <- readRDS("results/Mean Models/All_Windows_Models_OISST_Fix.RDS")
+all_windows_results <- readRDS("results/Mean Models/All_Windows_Models_OISST_detrended.RDS")
 
 ###################### AIC Model Selection Summary  ##########################
 
@@ -589,3 +585,4 @@ final_anova_table <- final_anova_table %>%
     F_Value = round(F_Value, 3),
     p_value = round(p_value, 4)
   )
+summary(all_windows_results$`3`$Models$Depth$Basic)

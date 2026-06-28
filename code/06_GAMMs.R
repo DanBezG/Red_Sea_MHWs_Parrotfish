@@ -109,6 +109,8 @@ get_excluded_fish <- function(model_type, baseline, win) {
       if (win == "1week") return(c("1_1168793", "3_1255806", "4_1255792", "4_1255806"))
       if (win == "1.5") return(c("1_1168792","1_1168793", "3_1255806", "4_1255792", "4_1255806","3_1255792"))
       if (win == "3") return(c("1_1168792","1_1168793", "2_1255800", "3_1255806", "4_1255806","3_1255792"))
+    } else if (baseline == "no_overlap") {
+      if (win == "1week") return(c("11_1273489", "3_1255785", "3_1255800", "3_1255803", "4_1255800", "4_1255815", "8_1255792", "8_1255806"))
     }
   } else if (model_type == "activity") {
     if (baseline == "Fix") {
@@ -119,6 +121,8 @@ get_excluded_fish <- function(model_type, baseline, win) {
       if (win == "1week") return(c("1_1212923", "2_1255791", "2_1255800", "2_1255815", "3_1255806", "4_1255792", "4_1255806"))
       if (win == "1.5") return(c("1_1212923", "2_1255791", "2_1255800", "3_1255806", "4_1255792", "4_1255806"))
       if (win == "3") return(c("1_1212923", "2_1255791", "2_1255800", "3_1255806", "4_1255806"))
+    } else if (baseline == "no_overlap") {
+      if (win == "1week") return(c("11_1273489", "3_1255785", "3_1255800", "3_1255803", "4_1255791", "4_1255800", "4_1255807", "4_1255815", "8_1255792", "8_1255806"))
     }
   }
   return(c())
@@ -141,7 +145,7 @@ tags_metadata <- read.xlsx("data/parrotfish data/parrotfish_metadata.xlsx") %>%
   rename(Length_cm = `Length.(cm)`, Weight_gr = `Weight.(gr)`)
 
 # Convert date columns to appropriate format
-date_cols <- c("date_start", "date_end", "start_1week", "end_1week", "start_1", "end_1", "start_1.5", "end_1.5", "start_3", "end_3")
+date_cols <- c("date_start", "date_end", "start_1week", "end_1week", "start_1.5", "end_1.5", "start_3", "end_3")
 for (col in date_cols) {
   MHWs_Eilat_Fix_OISST[[col]] <- convertToDate(MHWs_Eilat_Fix_OISST[[col]])
   MHWs_Eilat_detrended_OISST[[col]] <- convertToDate(MHWs_Eilat_detrended_OISST[[col]])
@@ -155,9 +159,13 @@ MHWs_Eilat_detrended_OISST$Serial <- 1:nrow(MHWs_Eilat_detrended_OISST)
 MHWs_Eilat_detrended_OISST <- MHWs_Eilat_detrended_OISST %>% relocate(Serial, .before = date_start)
 MHWs_Eilat_detrended_OISST <- MHWs_Eilat_detrended_OISST[-4]
 
+## No-overlap option - fix baseline only!
+no_overlap_serials <- c(3,4,8,10,11,12)
+mhws_no_overlap <- MHWs_Eilat_Fix_OISST %>% filter(Serial %in% no_overlap_serials)
+
 ###################### THE MASTER LOOP ##########################
-definitions <- c("Fix", "detrended")
-windows <- c("1week", "1.5", "3")
+definitions <- c("detrended")# "Fix", "detrended" or "no_overlap"; It is possible to put all together and get one big df
+windows <- c("1week")#"1week, "1.5", "3"; It is possible to put all together and get one big df
 
 # Loop through each baseline definition and time window combination
 for (baseline in definitions) {
@@ -167,7 +175,7 @@ for (baseline in definitions) {
     cat(">>> STARTING NEW RUN: Baseline =", baseline, "| Time Window =", win, "<<<\n")
     cat("=======================================================================\n\n")
     
-    current_MHW_def <- if(baseline == "Fix") MHWs_Eilat_Fix_OISST else MHWs_Eilat_detrended_OISST
+    current_MHW_def <- if(baseline == "Fix") MHWs_Eilat_Fix_OISST else if(baseline == "detrended") MHWs_Eilat_detrended_OISST else mhws_no_overlap 
     
     cat("Extracting fish data...\n")
     MHWs_fish_data <- get_MHWs_fish_df(current_MHW_def, combined_parrotfish_df, window_suffix = win)
@@ -199,6 +207,7 @@ for (baseline in definitions) {
     # Adjust variables slightly to accommodate Beta/Gamma model constraints (0/1 limits)
     detection_summary$ping_rate_adj <- detection_summary$ping_rate_per_hour + 0.001
     n_rows <- nrow(detection_summary)
+    # Apply proportion squeezing to avoid absolute 0 and 1 boundaries for the model
     detection_summary$presence_proportion_adj <- (detection_summary$presence_proportion * (n_rows - 1) + 0.5) / n_rows
     
     # Beta GLMM: Check if probability of detection varies across MHW stages
@@ -491,7 +500,7 @@ for (baseline in definitions) {
     
     cat("\n>>> WINNING ACTIVITY MODEL (Parsimony):", best_act_name, "<<<\n")
     readline(prompt=">>> PAUSED: Inspect Winning Activity Model Results. Press [Enter] to move to the NEXT run... ")
-    activity_filename <- paste0("results/Models/Activity_Models_OISST_", baseline, "_ordinal_", win, ".RDS")
+    activity_filename <- paste0("results/GAM/Activity_Models_OISST_", baseline, "_ordinal_", win, ".RDS")
     saveRDS(act_model_list, activity_filename)
     cat("Saved Activity Models:", activity_filename, "\n")
     
@@ -504,8 +513,8 @@ cat("\n!!! ALL RUNS COMPLETED SUCCESSFULLY !!!\n")
 # --- TEMPORAL AUTOCORRELATION CORRECTION (DEPTH) ---
 cat("\n--- Checking and Correcting Autocorrelation for Depth ---\n")
 
-# Load model list to evaluate AR1 correlation
-ac_model_list <- readRDS("results/GAM/Activity_Models_OISST_detrended_ordinal_1.5.RDS")
+# Load model list to evaluate AR1 correlation 
+ac_model_list <- readRDS("results/GAM/Main analyses/Depth_Models_OISST_Fix_ordinal_1week.rds")
 models_to_compare <- ac_model_list[sapply(ac_model_list, function(x) inherits(x, "gam"))]
 aic_table <- imap_dfr(models_to_compare, ~{
   data.frame(
@@ -516,11 +525,12 @@ aic_table <- imap_dfr(models_to_compare, ~{
 }) %>% arrange(AIC)
 
 print(aic_table)
-best_model_name <- aic_table$model[which.min(aic_table$AIC)]
+best_model_name <- aic_table$model[aic_table$AIC == aic_table$AIC[aic_table$model == "best_mod"]]
+best_model_name <- best_model_name[best_model_name!= "best_mod"] # In case of ties, take the first one
 best_model <- models_to_compare[[best_model_name]]
 
 # 1. Define start events to prevent AR1 from correlating across different fish
-MHWs_thinned <- ac_model_list$dep_df 
+MHWs_thinned <- ac_model_list$mhw_df
 MHWs_thinned <- MHWs_thinned %>% arrange(Serial_fish_id, real_datetime)
 MHWs_thinned$start_event <- !duplicated(MHWs_thinned$Serial_fish_id)
 
@@ -549,4 +559,4 @@ summary(best_mod_ar1)
 ac_model_list$best_gam_mod_ar1 <- best_mod_ar1
 ac_model_list$rho <- rho_val
 
-# saveRDS(ac_model_list,"results/GAM/Activity_Models_OISST_detrended_ordinal_1.5.RDS")
+# saveRDS(ac_model_list,"results/GAM/Depth_Models_OISST_detrended_ordinal_1week.RDS")

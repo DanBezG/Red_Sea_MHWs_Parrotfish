@@ -9,8 +9,8 @@ p_load(tidyverse, lubridate, openxlsx,broom,gratia,vegan)
 ## Load data
 
 # MHWs summary
-sum_heat_wave_day <- readRDS("results/Individual Heatwaves/All_Windows_Models_OISST_detrended.RDS")
-sum_heat_wave_day <- sum_heat_wave_day$`1.5`$Data_Summary
+sum_heat_wave_day <- readRDS("results/Mean Models/All_Windows_Models_OISST_Fix.RDS")
+sum_heat_wave_day <- sum_heat_wave_day$`1week`$Data_Summary
 # tags metadata
 tags_metadata <- read.xlsx("data/parrotfish data/parrotfish_metadata.xlsx")
 
@@ -28,7 +28,7 @@ MHWs_Eilat_Fix_OISST$Serial <- c(1:dim(MHWs_Eilat_Fix_OISST)[1])
 MHWs_Eilat_Fix_OISST <- MHWs_Eilat_Fix_OISST %>% relocate(Serial,.before = date_start)
 
 # Choose dataset to work with
-MHWs_Eilat <- MHWs_Eilat_detrended_OISST 
+MHWs_Eilat <- MHWs_Eilat_Fix_OISST 
 MHWs_Eilat$Serial <- 1:nrow(MHWs_Eilat)
 
 # Nest the data by Serial 
@@ -98,8 +98,6 @@ for (event_calc in 1:dim(nest_hw_day)[1]) {
 }
 rm(temp_row,temp_fish,temp_heat_wave)
 
-# Remove rows where all metrics (activity, depth, distance) are NA
-MHWs_comparison <- MHWs_comparison %>% filter(!(is.na(ln_activity_ratio) & is.na(delta_depth)))
 
 MHW_disp_comparison <- sum_heat_wave_day %>%
   filter(disp_max_n > 3) %>%  # Only include displacements with more than 3 days
@@ -131,6 +129,9 @@ MHW_disp_comparison <- sum_heat_wave_day %>%
 
 # Merge with heatwave metadata
 MHWs_comparison <- merge(MHWs_comparison,MHW_disp_comparison,by=c("Serial","fish_id","Stage_period"),all.x = T)
+# Remove rows where all metrics (activity, depth) are NA
+MHWs_comparison <- MHWs_comparison %>% filter(!(is.na(ln_activity_ratio) & is.na(delta_depth) & is.na(log_max_displacement)))
+
 rm(MHW_disp_comparison)
 # Choose Fix or detrended
 MHWs_comparison <- merge(MHWs_comparison,MHWs_Eilat,by = "Serial") %>%
@@ -147,7 +148,7 @@ MHWs_comparison <- distinct(merge(MHWs_comparison,tags_metadata,by = "fish_id"))
 mhw_pca_data <- MHWs_Eilat %>%
   select(
     duration, intensity_mean, intensity_max, 
-    intensity_cumulative, 
+    intensity_cumulative, #intensity_cum for detrended baseline and intensity_cumulative for fix 
     intensity_max_abs, 
     rate_onset, rate_decline
   )
@@ -186,6 +187,7 @@ pc1_scores <- data.frame(
   PC1 = as.numeric(pc1_raw[, 1])
 )
 
+
 # Join PC1 into your linear models dataframe
 MHWs_comparison <- MHWs_comparison %>%
   left_join(pc1_scores, by = "Serial")
@@ -194,7 +196,7 @@ MHWs_comparison <- MHWs_comparison %>%
 ### Choose the name of the database and def !
 # fix = OISST_Fix_MHW_Stage_comparison.RDS
 # detrended =  OISST_detrended_MHW_Stage_comparison.RDS
-# saveRDS(MHWs_comparison,"results/MHW Characteristics lm/OISST_detrended_MHW_Stage_comparison.RDS")
+saveRDS(MHWs_comparison,"results/MHW Characteristics lm/OISST_Fix_MHW_Stage_comparison_1week.RDS")
 
 
 ## Check relationship with MHWs characteristics - linear models!
@@ -260,7 +262,7 @@ model_summaries <- bind_rows(model_summaries, .id = "model_num")
 ### Choose the name of the def !
 # fix = OISST_Fix_MHW_lm_summary.RDS
 # detrended =  OISST_detrended_lm_summary.RDS
-# saveRDS(MHWs_comparison,"results/MHW Characteristics lm/OISST_detrended_MHW_lm_summary_1.5.RDS")
+saveRDS(model_summaries,"results/MHW Characteristics lm/OISST_Fix_MHW_lm_summary_1week.RDS")
 
 
 
