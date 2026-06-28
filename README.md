@@ -45,3 +45,44 @@ The analysis process is divided into several stages, represented by numbered scr
 4.  Note 2: In some scripts you need to choose if you conduct the analyses on the fixed or detrended baselines; read the documantation carefully!   
 
 **Important Note:** A crucial part of the analysis (in script `03`) involves manual filtering. To reproduce the results exactly, you should use the pre-filtered files located in the `data/MHWs_def/MHWs_filtered/` directory.
+
+## Key Variables and Columns
+
+Throughout the analysis, several key identifiers and calculated metrics are generated. Understanding them is crucial for interpreting the data and results.
+
+### In MHW Definition Files (`data/MHWs_def/MHWs_filtered/`)
+
+In the `Short_MHW_Events` sheet within the MHW definition Excel files:
+
+*   **`start_1week`, `end_1week`, `start_1.5`, `end_1.5`, `start_3`, `end_3`**:
+    *   These columns define the "before" and "after" analysis windows surrounding each MHW.
+    *   The time windows are not a simple fixed duration. The logic in script `03` truncates these periods to ensure they **do not overlap** with adjacent MHW events. This is a critical methodological detail for ensuring the independence of the "before" and "after" periods.
+*   **`Fish_IDs`**:
+    *   A comma-separated list of fish ID numbers that were deemed suitable for analysis for that specific MHW event, having passed the initial filtering criteria (i.e., presence during the MHW and in at least one of the before/after periods).
+
+### In Processed Results Files (e.g., in `results/Mean Models/` or `results/MHW Characteristics lm/`)
+
+*   **`Serial`**:
+    *   A sequential numeric ID (1, 2, 3...) assigned to each MHW event within a specific analysis run.
+    *   
+*   **`Serial_fish_id`**:
+    *   A concatenated identifier created by joining `Serial` and `fish_id` (e.g., "3_1255800").
+    *   This is the most critical unique identifier at the observation level. It represents a **single specific fish in the context of a single specific MHW event**. Since the same fish can experience multiple MHWs, `fish_id` alone is not sufficient to uniquely identify a behavioral response.
+*   **`mean_disp_max`**:
+    *   A calculated metric for the daily spatial range of a fish. As defined in script `04`, it is the difference between the 5% most distant `distance_shore` observations and the 95% closest observations during daylight hours.
+    *   It is a derived metric, not a direct observation, designed to represent the typical daily movement range.
+
+### In the GAMM Analysis (`results/GAM/`)
+
+*   **`TimeOrdinal`**:
+    *   A continuous numeric variable (ranging from 1 to 5) representing the time of day
+    *   This is not simply the hour of the day. As generated in script `06`, `TimeOrdinal` is **normalized to the length of the solar day**. For example, the period between sunrise and solar noon is always mapped to the numeric range [2, 3], regardless of whether it's a long summer day or a short winter day.
+    *   This allows the GAMM models to correctly fit the **shape** of the diel (24-hour) behavioral cycle and compare it across different seasons and MHW stages, independent of the changing day length.
+
+## Usage and Citation
+
+The data and code provided in this repository are open-access. If you use these materials for your own research or meta-analyses, please cite the original associated publication:
+
+Golanski, D., et al. (2026). Parrotfish demonstrate little behavioral shift during marine heatwaves. Biology Letters
+
+For questions or issues regarding the data or code, please contact the corresponding author at: dangolanski712@gmail.com
